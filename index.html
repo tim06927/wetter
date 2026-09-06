@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Weather Balloon Flight Lab</title>
+    <link rel="stylesheet" href="./src/styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="hero" aria-labelledby="page-title">
+        <div class="hero-copy">
+          <p class="eyebrow">Balloon telemetry</p>
+          <h1 id="page-title">Weather Balloon Flight Lab</h1>
+          <p class="hero-text">
+            Explore the September 2026 flight data: position, altitude,
+            pressure, temperature, humidity, ozone, and radiation readings.
+          </p>
+        </div>
+        <div class="flight-panel" aria-label="Flight summary">
+          <div class="status-line">
+            <span id="data-status">Loading flight data...</span>
+          </div>
+          <div class="metric-grid" id="metrics"></div>
+        </div>
+      </section>
+
+      <section class="workspace" aria-label="Flight visualizations">
+        <aside class="controls" aria-label="Data controls">
+          <label class="control">
+            <span>Signal</span>
+            <select id="metric-select">
+              <option value="altitude">Altitude</option>
+              <option value="temperature">Temperature</option>
+              <option value="pressure">Pressure</option>
+              <option value="humidity">Humidity</option>
+              <option value="speed">Ground speed</option>
+              <option value="uva">UVA index</option>
+            </select>
+          </label>
+
+          <label class="control">
+            <span>Sample density</span>
+            <input id="density-slider" type="range" min="80" max="900" value="360" />
+          </label>
+
+          <div class="control compact">
+            <span>Selected point</span>
+            <strong id="selected-point">Hover a chart point</strong>
+          </div>
+
+          <div class="learning-block">
+            <h2>Student tasks</h2>
+            <button class="task-button" data-task="apogee">Find apogee details</button>
+            <button class="task-button" data-task="descent">Add descent rate</button>
+            <button class="task-button" data-task="ozone">Connect ozone readings</button>
+            <button class="task-button" data-task="geiger">Compare radiation</button>
+          </div>
+        </aside>
+
+        <section class="visuals">
+          <div class="chart-header">
+            <div>
+              <p class="eyebrow">Time series</p>
+              <h2 id="chart-title">Altitude over flight time</h2>
+            </div>
+            <p id="chart-note">Each point comes from the cleaned telemetry CSV.</p>
+          </div>
+          <svg id="main-chart" role="img" aria-label="Flight signal chart"></svg>
+        </section>
+
+        <section class="visuals map-area">
+          <div class="chart-header">
+            <div>
+              <p class="eyebrow">Ground track</p>
+              <h2>Balloon path</h2>
+            </div>
+            <p id="map-note">Projected from latitude and longitude readings.</p>
+          </div>
+          <svg id="map-chart" role="img" aria-label="Balloon ground track"></svg>
+        </section>
+      </section>
+
+      <section class="data-section" aria-labelledby="data-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Raw readings</p>
+            <h2 id="data-title">Telemetry preview</h2>
+          </div>
+          <p>First 12 valid records from the cleaned data file.</p>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>UTC time</th>
+                <th>Latitude</th>
+                <th>Longitude</th>
+                <th>Altitude</th>
+                <th>Temperature</th>
+                <th>Pressure</th>
+              </tr>
+            </thead>
+            <tbody id="data-preview"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <template id="metric-template">
+      <article class="metric">
+        <span class="metric-label"></span>
+        <strong class="metric-value"></strong>
+        <small class="metric-detail"></small>
+      </article>
+    </template>
+
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>

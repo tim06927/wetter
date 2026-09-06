@@ -1,0 +1,7 @@
+# Replace these placeholders after the GitHub repository exists.
+# Example:
+# * @your-github-name @teacher-github-name
+# /.github/ @your-github-name @teacher-github-name
+# /deploy/ @your-github-name @teacher-github-name
+# /package.json @your-github-name @teacher-github-name
+# /package-lock.json @your-github-name @teacher-github-name
