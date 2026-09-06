@@ -4,14 +4,15 @@ A static web app for exploring weather balloon telemetry from a student launch.
 
 The first version runs directly in the browser and loads:
 
-- `data_some_cleaning.csv`
-- `ozon.txt`
-- `geiger.txt`
+- `public/data/data_some_cleaning.csv`
+- `public/data/ozon.txt`
+- `public/data/geiger.txt`
 
-## Local Preview On This Server
+## Local Development
 
 ```bash
-python3 -m http.server 5173
+npm install
+npm run dev
 ```
 
 Then open:
@@ -35,6 +36,18 @@ This keeps the code readable while still catching basic mistakes.
 
 Production should serve static files only through Caddy. No student-written
 server process needs to run on the home server.
+
+Build the static site:
+
+```bash
+npm run build
+```
+
+Install the latest build locally:
+
+```bash
+sudo ./scripts/install_static_site.sh
+```
 
 ```caddyfile
 balloon.example.com {

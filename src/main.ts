@@ -1,8 +1,43 @@
-// @ts-check
+type MetricKey = 'altitude' | 'temperature' | 'pressure' | 'humidity' | 'speed' | 'uva';
+type FlightNumberColumn = Exclude<MetricKey, never>;
 
-const DATA_FILE = './data_some_cleaning.csv';
-const OZONE_FILE = './ozon.txt';
-const GEIGER_FILE = './geiger.txt';
+type FlightRow = {
+  uptime: number;
+  time: Date;
+  fix: number;
+  lat: number;
+  lon: number;
+  altitude: number;
+  speed: number;
+  temperature: number;
+  pressure: number;
+  humidity: number;
+  uva: number;
+};
+
+type SensorRow = {
+  ms: number;
+  value: number;
+  unit: string;
+};
+
+type MetricConfig = {
+  label: string;
+  unit: string;
+  column: FlightNumberColumn;
+  color: string;
+  clampMin?: number;
+};
+
+type Point = {
+  row: FlightRow;
+  x: number;
+  y: number;
+};
+
+const DATA_FILE = './data/data_some_cleaning.csv';
+const OZONE_FILE = './data/ozon.txt';
+const GEIGER_FILE = './data/geiger.txt';
 
 const columns = {
   uptime: 'Uptime [s]',
@@ -16,9 +51,9 @@ const columns = {
   pressure: 'Pressure: Ext MS8607 [hPa]',
   humidity: 'Humidity: Ext MS8607 [%]',
   uva: 'Light Intensity: UVA index []',
-};
+} as const;
 
-const metricConfig = {
+const metricConfig: Record<MetricKey, MetricConfig> = {
   altitude: { label: 'Altitude', unit: 'm', column: 'altitude', color: '#0f6b6e', clampMin: 0 },
   temperature: { label: 'Temperature', unit: 'C', column: 'temperature', color: '#c5452f' },
   pressure: { label: 'Pressure', unit: 'hPa', column: 'pressure', color: '#375a9e' },
@@ -27,7 +62,20 @@ const metricConfig = {
   uva: { label: 'UVA index', unit: '', column: 'uva', color: '#b8870a', clampMin: 0 },
 };
 
-const appState = {
+const taskMessages: Record<string, string> = {
+  apogee: 'Task: Show the exact apogee time and explain why pressure is lowest there.',
+  descent: 'Task: Compute vertical speed between readings and chart descent rate.',
+  ozone: 'Task: Align ozone sensor milliseconds with flight time and compare by altitude.',
+  geiger: 'Task: Convert Geiger clicks into a rate and test whether it rises with altitude.',
+};
+
+const appState: {
+  flight: FlightRow[];
+  ozone: SensorRow[];
+  geiger: SensorRow[];
+  metric: MetricKey;
+  density: number;
+} = {
   flight: [],
   ozone: [],
   geiger: [],
@@ -42,12 +90,12 @@ const chartTitle = document.querySelector('#chart-title');
 const chartNote = document.querySelector('#chart-note');
 const selectedPoint = document.querySelector('#selected-point');
 
-init().catch((error) => {
+init().catch((error: unknown) => {
   console.error(error);
-  setStatus(`Could not load data: ${error.message}`);
+  setStatus(`Could not load data: ${error instanceof Error ? error.message : String(error)}`);
 });
 
-async function init() {
+async function init(): Promise<void> {
   const [flightText, ozoneText, geigerText] = await Promise.all([
     fetchText(DATA_FILE),
     fetchText(OZONE_FILE),
@@ -70,7 +118,7 @@ async function init() {
   setStatus(`${appState.flight.length.toLocaleString()} valid flight records loaded`);
 }
 
-async function fetchText(path) {
+async function fetchText(path: string): Promise<string> {
   const response = await fetch(path);
   if (!response.ok) {
     throw new Error(`${path} returned ${response.status}`);
@@ -78,7 +126,7 @@ async function fetchText(path) {
   return response.text();
 }
 
-function parseFlightCsv(text) {
+function parseFlightCsv(text: string): FlightRow[] {
   const lines = text
     .split(/\r?\n/)
     .map((line) => line.trim())
@@ -94,16 +142,16 @@ function parseFlightCsv(text) {
     .slice(headerIndex + 1)
     .filter((line) => !line.startsWith('---'))
     .map((line) => parseFlightRow(headers, line))
-    .filter((row) => row && Number.isFinite(row.lat) && Number.isFinite(row.lon));
+    .filter((row): row is FlightRow => row !== null && Number.isFinite(row.lat) && Number.isFinite(row.lon));
 }
 
-function parseFlightRow(headers, line) {
+function parseFlightRow(headers: string[], line: string): FlightRow | null {
   const values = line.split(';');
   if (values.length < headers.length) return null;
 
-  const record = Object.fromEntries(headers.map((header, index) => [header, values[index]]));
+  const record = Object.fromEntries(headers.map((header, index) => [header, values[index] ?? '']));
   const time = new Date(record[columns.time]);
-  const row = {
+  const row: FlightRow = {
     uptime: numeric(record[columns.uptime]),
     time,
     fix: numeric(record[columns.fix]),
@@ -121,7 +169,7 @@ function parseFlightRow(headers, line) {
   return row;
 }
 
-function parseSimpleSensorFile(text, unit) {
+function parseSimpleSensorFile(text: string, unit: string): SensorRow[] {
   return text
     .split(/\r?\n/)
     .map((line) => line.trim())
@@ -133,16 +181,18 @@ function parseSimpleSensorFile(text, unit) {
     .filter((row) => Number.isFinite(row.ms) && Number.isFinite(row.value));
 }
 
-function numeric(value) {
+function numeric(value: unknown): number {
   const parsed = Number.parseFloat(String(value ?? '').replace(',', '.'));
-  return Number.isFinite(parsed) ? parsed : NaN;
+  return Number.isFinite(parsed) ? parsed : Number.NaN;
 }
 
-function wireControls() {
+function wireControls(): void {
   if (metricSelect instanceof HTMLSelectElement) {
     metricSelect.addEventListener('change', () => {
-      appState.metric = metricSelect.value;
-      renderAll();
+      if (isMetricKey(metricSelect.value)) {
+        appState.metric = metricSelect.value;
+        renderAll();
+      }
     });
   }
 
@@ -156,25 +206,23 @@ function wireControls() {
   document.querySelectorAll('.task-button').forEach((button) => {
     button.addEventListener('click', () => {
       if (!(button instanceof HTMLButtonElement)) return;
-      const messages = {
-        apogee: 'Task: Show the exact apogee time and explain why pressure is lowest there.',
-        descent: 'Task: Compute vertical speed between readings and chart descent rate.',
-        ozone: 'Task: Align ozone sensor milliseconds with flight time and compare by altitude.',
-        geiger: 'Task: Convert Geiger clicks into a rate and test whether it rises with altitude.',
-      };
-      setSelected(messages[button.dataset.task] ?? 'Choose a task and make a small pull request.');
+      setSelected(taskMessages[button.dataset.task ?? ''] ?? 'Choose a task and make a small pull request.');
     });
   });
 
   window.addEventListener('resize', () => renderAll());
 }
 
-function renderAll() {
+function isMetricKey(value: string): value is MetricKey {
+  return Object.hasOwn(metricConfig, value);
+}
+
+function renderAll(): void {
   renderMainChart();
   renderMap();
 }
 
-function renderMetrics() {
+function renderMetrics(): void {
   const metricsEl = document.querySelector('#metrics');
   const template = document.querySelector('#metric-template');
   if (!(metricsEl instanceof HTMLElement) || !(template instanceof HTMLTemplateElement)) return;
@@ -184,26 +232,31 @@ function renderMetrics() {
   const ozoneMax = maxBy(appState.ozone, (row) => row.value);
   const geigerTotal = appState.geiger.reduce((sum, row) => sum + row.value, 0);
 
-  [
+  const metrics: Array<[string, string, string]> = [
     ['Max altitude', formatNumber(summary.maxAltitude.altitude, 0, 'm'), formatTime(summary.maxAltitude.time)],
     ['Flight duration', formatDuration(summary.durationSeconds), `${formatTime(summary.start.time)} to ${formatTime(summary.end.time)}`],
     ['Lowest temperature', formatNumber(summary.minTemperature.temperature, 1, 'C'), formatTime(summary.minTemperature.time)],
     ['Distance', formatNumber(summary.distanceKm, 1, 'km'), 'Projected from GNSS points'],
     ['Peak ozone', ozoneMax ? formatNumber(ozoneMax.value, 0, 'ppb') : 'n/a', `${appState.ozone.length.toLocaleString()} ozone readings`],
     ['Geiger clicks', geigerTotal.toLocaleString(), `${appState.geiger.length.toLocaleString()} radiation readings`],
-  ].forEach(([label, value, detail]) => {
+  ];
+
+  metrics.forEach(([label, value, detail]) => {
     const item = template.content.firstElementChild?.cloneNode(true);
     if (!(item instanceof HTMLElement)) return;
-    item.querySelector('.metric-label').textContent = label;
-    item.querySelector('.metric-value').textContent = value;
-    item.querySelector('.metric-detail').textContent = detail;
+
+    item.querySelector('.metric-label')?.replaceChildren(label);
+    item.querySelector('.metric-value')?.replaceChildren(value);
+    item.querySelector('.metric-detail')?.replaceChildren(detail);
     metricsEl.append(item);
   });
 }
 
-function summarizeFlight(rows) {
+function summarizeFlight(rows: FlightRow[]) {
   const start = rows[0];
   const end = rows[rows.length - 1];
+  if (!start || !end) throw new Error('No flight rows to summarize');
+
   return {
     start,
     end,
@@ -214,14 +267,18 @@ function summarizeFlight(rows) {
   };
 }
 
-function renderMainChart() {
+function renderMainChart(): void {
   const svg = document.querySelector('#main-chart');
   if (!(svg instanceof SVGSVGElement)) return;
 
-  const config = metricConfig[appState.metric] ?? metricConfig.altitude;
+  const config = metricConfig[appState.metric];
   const rows = sample(appState.flight, appState.density);
+  const first = rows[0];
+  const last = rows[rows.length - 1];
+  if (!first || !last) return;
+
   const values = rows.map((row) => row[config.column]).filter(Number.isFinite);
-  const xRange = [rows[0].uptime, rows[rows.length - 1].uptime];
+  const xRange: [number, number] = [first.uptime, last.uptime];
   const yRange = extent(values, { clampMin: config.clampMin });
 
   if (chartTitle) chartTitle.textContent = `${config.label} over flight time`;
@@ -241,7 +298,7 @@ function renderMainChart() {
 
   drawGrid(group, plotWidth, plotHeight, yRange, config.unit);
 
-  const points = rows
+  const points: Point[] = rows
     .filter((row) => Number.isFinite(row[config.column]))
     .map((row) => {
       const x = scale(row.uptime, xRange, [0, plotWidth]);
@@ -274,7 +331,7 @@ function renderMainChart() {
   drawAxisLabel(svg, pad.left + plotWidth / 2, height - 8, 'Flight time');
 }
 
-function renderMap() {
+function renderMap(): void {
   const svg = document.querySelector('#map-chart');
   if (!(svg instanceof SVGSVGElement)) return;
 
@@ -289,17 +346,16 @@ function renderMap() {
   svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
   svg.replaceChildren();
 
-  const background = svgEl('rect', {
+  svg.append(svgEl('rect', {
     x: 0,
     y: 0,
     width,
     height,
     rx: 6,
     class: 'map-background',
-  });
-  svg.append(background);
+  }));
 
-  const points = rows.map((row) => ({
+  const points: Point[] = rows.map((row) => ({
     row,
     x: scale(row.lon, lonRange, [pad, width - pad]),
     y: scale(row.lat, latRange, [height - pad, pad]),
@@ -329,32 +385,33 @@ function renderMap() {
   if (finish) drawMapMarker(svg, finish.x, finish.y, 'Landing');
 }
 
-function drawGrid(group, width, height, yRange, unit) {
+function drawGrid(group: SVGElement, width: number, height: number, yRange: [number, number], unit: string): void {
   const ticks = 5;
   for (let index = 0; index <= ticks; index += 1) {
     const y = (height / ticks) * index;
     const value = scale(y, [height, 0], yRange);
     group.append(svgEl('line', { x1: 0, x2: width, y1: y, y2: y, class: 'grid-line' }));
+
     const label = svgEl('text', { x: -12, y: y + 4, class: 'axis-label', 'text-anchor': 'end' });
     label.textContent = formatNumber(value, 0, unit);
     group.append(label);
   }
 }
 
-function drawAxisLabel(svg, x, y, text) {
+function drawAxisLabel(svg: SVGSVGElement, x: number, y: number, text: string): void {
   const label = svgEl('text', { x, y, class: 'axis-title', 'text-anchor': 'middle' });
   label.textContent = text;
   svg.append(label);
 }
 
-function drawMapMarker(svg, x, y, text) {
+function drawMapMarker(svg: SVGSVGElement, x: number, y: number, text: string): void {
   svg.append(svgEl('circle', { cx: x, cy: y, r: 7, class: 'map-marker' }));
   const label = svgEl('text', { x: x + 11, y: y + 4, class: 'map-label' });
   label.textContent = text;
   svg.append(label);
 }
 
-function renderTable() {
+function renderTable(): void {
   const body = document.querySelector('#data-preview');
   if (!(body instanceof HTMLTableSectionElement)) return;
 
@@ -377,12 +434,12 @@ function renderTable() {
   });
 }
 
-function sample(rows, target) {
+function sample<T>(rows: T[], target: number): T[] {
   const step = Math.max(1, Math.floor(rows.length / target));
   return rows.filter((_, index) => index % step === 0);
 }
 
-function extent(values, options = {}) {
+function extent(values: number[], options: { clampMin?: number } = {}): [number, number] {
   const finite = values.filter(Number.isFinite);
   const min = Math.min(...finite);
   const max = Math.max(...finite);
@@ -391,35 +448,37 @@ function extent(values, options = {}) {
   return [lower, max + padding];
 }
 
-function scale(value, from, to) {
+function scale(value: number, from: [number, number], to: [number, number]): number {
   const span = from[1] - from[0];
   const ratio = Math.abs(span) < 1e-9 ? 0 : (value - from[0]) / span;
   return to[0] + ratio * (to[1] - to[0]);
 }
 
-function maxBy(items, accessor) {
-  return items.reduce((best, item) => {
+function maxBy<T>(items: T[], accessor: (item: T) => number): T | null {
+  return items.reduce<T | null>((best, item) => {
     if (!best || accessor(item) > accessor(best)) return item;
     return best;
   }, null);
 }
 
-function minBy(items, accessor) {
-  return items.reduce((best, item) => {
+function minBy<T>(items: T[], accessor: (item: T) => number): T | null {
+  return items.reduce<T | null>((best, item) => {
     if (!best || accessor(item) < accessor(best)) return item;
     return best;
   }, null);
 }
 
-function pathDistanceKm(rows) {
+function pathDistanceKm(rows: FlightRow[]): number {
   let total = 0;
   for (let index = 1; index < rows.length; index += 1) {
-    total += haversineKm(rows[index - 1], rows[index]);
+    const previous = rows[index - 1];
+    const current = rows[index];
+    if (previous && current) total += haversineKm(previous, current);
   }
   return total;
 }
 
-function haversineKm(a, b) {
+function haversineKm(a: FlightRow, b: FlightRow): number {
   const earthKm = 6371;
   const dLat = toRadians(b.lat - a.lat);
   const dLon = toRadians(b.lon - a.lon);
@@ -429,11 +488,11 @@ function haversineKm(a, b) {
   return 2 * earthKm * Math.asin(Math.sqrt(h));
 }
 
-function toRadians(value) {
+function toRadians(value: number): number {
   return (value * Math.PI) / 180;
 }
 
-function formatNumber(value, digits = 0, unit = '') {
+function formatNumber(value: number, digits = 0, unit = ''): string {
   if (!Number.isFinite(value)) return 'n/a';
   const formatted = new Intl.NumberFormat('en', {
     maximumFractionDigits: digits,
@@ -442,13 +501,13 @@ function formatNumber(value, digits = 0, unit = '') {
   return unit ? `${formatted} ${unit}` : formatted;
 }
 
-function formatDuration(seconds) {
+function formatDuration(seconds: number): string {
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
   return `${hours} h ${minutes} min`;
 }
 
-function formatTime(date) {
+function formatTime(date: Date): string {
   return new Intl.DateTimeFormat('en', {
     hour: '2-digit',
     minute: '2-digit',
@@ -458,15 +517,15 @@ function formatTime(date) {
   }).format(date);
 }
 
-function setStatus(message) {
+function setStatus(message: string): void {
   if (statusEl) statusEl.textContent = message;
 }
 
-function setSelected(message) {
+function setSelected(message: string): void {
   if (selectedPoint) selectedPoint.textContent = message;
 }
 
-function svgEl(name, attributes) {
+function svgEl(name: string, attributes: Record<string, string | number>): SVGElement {
   const element = document.createElementNS('http://www.w3.org/2000/svg', name);
   Object.entries(attributes).forEach(([key, value]) => {
     element.setAttribute(key, String(value));

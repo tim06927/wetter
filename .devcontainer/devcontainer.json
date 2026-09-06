@@ -1,5 +1,6 @@
 {
   "name": "Weather Balloon Flight Lab",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:24-bookworm",
   "forwardPorts": [5173],
   "portsAttributes": {
     "5173": {

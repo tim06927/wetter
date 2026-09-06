@@ -6,6 +6,7 @@ SITE_ROOT="/srv/${APP_NAME}"
 RELEASES_DIR="${SITE_ROOT}/releases"
 CURRENT_LINK="${SITE_ROOT}/current"
 SOURCE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+BUILD_DIR="${SOURCE_DIR}/dist"
 RELEASE_NAME="$(date -u +%Y%m%dT%H%M%SZ)"
 RELEASE_DIR="${RELEASES_DIR}/${RELEASE_NAME}"
 
@@ -16,12 +17,14 @@ fi
 
 install -d -m 0755 "${RELEASE_DIR}"
 
+if [[ ! -f "${BUILD_DIR}/index.html" ]]; then
+  echo "Build output not found. Run npm run build before installing." >&2
+  exit 1
+fi
+
 rsync -a \
   --delete \
-  --exclude ".git" \
-  --exclude "node_modules" \
-  --exclude "dist" \
-  "${SOURCE_DIR}/" "${RELEASE_DIR}/"
+  "${BUILD_DIR}/" "${RELEASE_DIR}/"
 
 ln -sfn "${RELEASE_DIR}" "${CURRENT_LINK}"
 

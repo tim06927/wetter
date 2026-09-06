@@ -4,7 +4,7 @@ This project is for students learning real coding with AI assistance.
 
 - Keep the production site static. Do not add a backend, database, server-side API, login system, or deployment secret without maintainer review.
 - Do not commit API keys, passwords, tokens, cookies, or private keys.
-- Treat `data_some_cleaning.csv`, `original_data.csv`, `ozon.txt`, and `geiger.txt` as public once the site is published.
+- Treat files in `public/data/` as public once the site is published.
 - Keep changes small enough to review in a pull request.
 - Run `npm run check` and `npm run build` before requesting review.
 - Prefer readable JavaScript modules over clever abstractions.

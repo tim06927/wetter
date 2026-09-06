@@ -19,6 +19,6 @@
 
 ## Data Notes
 
-The logger CSV contains metadata before the real table. The app looks for the
-header row beginning with `Uptime [s];` and parses semicolon-separated telemetry
-from there.
+The logger CSV in `public/data/` contains metadata before the real table. The
+app looks for the header row beginning with `Uptime [s];` and parses
+semicolon-separated telemetry from there.
