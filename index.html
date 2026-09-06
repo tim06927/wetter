@@ -1,104 +1,104 @@
 <!doctype html>
-<html lang="en">
+<html lang="de">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Weather Balloon Flight Lab</title>
+    <title>Wetterballon-Fluglabor</title>
     <link rel="stylesheet" href="./src/styles.css" />
   </head>
   <body>
     <main class="app-shell">
       <section class="hero" aria-labelledby="page-title">
         <div class="hero-copy">
-          <p class="eyebrow">Balloon telemetry</p>
-          <h1 id="page-title">Weather Balloon Flight Lab</h1>
+          <p class="eyebrow">Ballon-Telemetrie</p>
+          <h1 id="page-title">Wetterballon-Fluglabor</h1>
           <p class="hero-text">
-            Explore the September 2026 flight data: position, altitude,
-            pressure, temperature, humidity, ozone, and radiation readings.
+            Erkunde die Flugdaten vom September 2026: Position, Höhe,
+            Luftdruck, Temperatur, Luftfeuchtigkeit, Ozon und Strahlung.
           </p>
         </div>
-        <div class="flight-panel" aria-label="Flight summary">
+        <div class="flight-panel" aria-label="Flugübersicht">
           <div class="status-line">
-            <span id="data-status">Loading flight data...</span>
+            <span id="data-status">Flugdaten werden geladen...</span>
           </div>
           <div class="metric-grid" id="metrics"></div>
         </div>
       </section>
 
-      <section class="workspace" aria-label="Flight visualizations">
-        <aside class="controls" aria-label="Data controls">
+      <section class="workspace" aria-label="Flugvisualisierungen">
+        <aside class="controls" aria-label="Datensteuerung">
           <label class="control">
             <span>Signal</span>
             <select id="metric-select">
-              <option value="altitude">Altitude</option>
-              <option value="temperature">Temperature</option>
-              <option value="pressure">Pressure</option>
-              <option value="humidity">Humidity</option>
-              <option value="speed">Ground speed</option>
-              <option value="uva">UVA index</option>
+              <option value="altitude">Höhe</option>
+              <option value="temperature">Temperatur</option>
+              <option value="pressure">Luftdruck</option>
+              <option value="humidity">Luftfeuchtigkeit</option>
+              <option value="speed">Geschwindigkeit</option>
+              <option value="uva">UVA-Index</option>
             </select>
           </label>
 
           <label class="control">
-            <span>Sample density</span>
+            <span>Stichprobendichte</span>
             <input id="density-slider" type="range" min="80" max="900" value="360" />
           </label>
 
           <div class="control compact">
-            <span>Selected point</span>
-            <strong id="selected-point">Hover a chart point</strong>
+            <span>Ausgewählter Messpunkt</span>
+            <strong id="selected-point">Einen Diagrammpunkt berühren oder darüberfahren</strong>
           </div>
 
           <div class="learning-block">
-            <h2>Student tasks</h2>
-            <button class="task-button" data-task="apogee">Find apogee details</button>
-            <button class="task-button" data-task="descent">Add descent rate</button>
-            <button class="task-button" data-task="ozone">Connect ozone readings</button>
-            <button class="task-button" data-task="geiger">Compare radiation</button>
+            <h2>Arbeitsaufträge</h2>
+            <button class="task-button" data-task="apogee">Apogäum bestimmen</button>
+            <button class="task-button" data-task="descent">Sinkrate hinzufügen</button>
+            <button class="task-button" data-task="ozone">Ozonwerte verknüpfen</button>
+            <button class="task-button" data-task="geiger">Strahlung vergleichen</button>
           </div>
         </aside>
 
         <section class="visuals">
           <div class="chart-header">
             <div>
-              <p class="eyebrow">Time series</p>
-              <h2 id="chart-title">Altitude over flight time</h2>
+              <p class="eyebrow">Zeitreihe</p>
+              <h2 id="chart-title">Höhe über Flugzeit</h2>
             </div>
-            <p id="chart-note">Each point comes from the cleaned telemetry CSV.</p>
+            <p id="chart-note">Jeder Punkt stammt aus der bereinigten Telemetrie-CSV.</p>
           </div>
-          <svg id="main-chart" role="img" aria-label="Flight signal chart"></svg>
+          <svg id="main-chart" role="img" aria-label="Diagramm des ausgewählten Flugsignals"></svg>
         </section>
 
         <section class="visuals map-area">
           <div class="chart-header">
             <div>
-              <p class="eyebrow">Ground track</p>
-              <h2>Balloon path</h2>
+              <p class="eyebrow">Flugroute</p>
+              <h2>Ballonroute</h2>
             </div>
-            <p id="map-note">Projected from latitude and longitude readings.</p>
+            <p id="map-note">Aus Breiten- und Längengraden projiziert.</p>
           </div>
-          <svg id="map-chart" role="img" aria-label="Balloon ground track"></svg>
+          <svg id="map-chart" role="img" aria-label="Bodenroute des Ballons"></svg>
         </section>
       </section>
 
       <section class="data-section" aria-labelledby="data-title">
         <div class="section-heading">
           <div>
-            <p class="eyebrow">Raw readings</p>
-            <h2 id="data-title">Telemetry preview</h2>
+            <p class="eyebrow">Rohdaten</p>
+            <h2 id="data-title">Telemetrie-Vorschau</h2>
           </div>
-          <p>First 12 valid records from the cleaned data file.</p>
+          <p>Die ersten 12 gültigen Messwerte aus der bereinigten Datendatei.</p>
         </div>
         <div class="table-wrap">
           <table>
             <thead>
               <tr>
-                <th>UTC time</th>
-                <th>Latitude</th>
-                <th>Longitude</th>
-                <th>Altitude</th>
-                <th>Temperature</th>
-                <th>Pressure</th>
+                <th>UTC-Zeit</th>
+                <th>Breitengrad</th>
+                <th>Längengrad</th>
+                <th>Höhe</th>
+                <th>Temperatur</th>
+                <th>Luftdruck</th>
               </tr>
             </thead>
             <tbody id="data-preview"></tbody>

@@ -54,19 +54,19 @@ const columns = {
 } as const;
 
 const metricConfig: Record<MetricKey, MetricConfig> = {
-  altitude: { label: 'Altitude', unit: 'm', column: 'altitude', color: '#0f6b6e', clampMin: 0 },
-  temperature: { label: 'Temperature', unit: 'C', column: 'temperature', color: '#c5452f' },
-  pressure: { label: 'Pressure', unit: 'hPa', column: 'pressure', color: '#375a9e' },
-  humidity: { label: 'Humidity', unit: '%', column: 'humidity', color: '#5c7a25', clampMin: 0 },
-  speed: { label: 'Ground speed', unit: 'km/h', column: 'speed', color: '#7a4c9c', clampMin: 0 },
-  uva: { label: 'UVA index', unit: '', column: 'uva', color: '#b8870a', clampMin: 0 },
+  altitude: { label: 'Höhe', unit: 'm', column: 'altitude', color: '#0f6b6e', clampMin: 0 },
+  temperature: { label: 'Temperatur', unit: '°C', column: 'temperature', color: '#c5452f' },
+  pressure: { label: 'Luftdruck', unit: 'hPa', column: 'pressure', color: '#375a9e' },
+  humidity: { label: 'Luftfeuchtigkeit', unit: '%', column: 'humidity', color: '#5c7a25', clampMin: 0 },
+  speed: { label: 'Geschwindigkeit', unit: 'km/h', column: 'speed', color: '#7a4c9c', clampMin: 0 },
+  uva: { label: 'UVA-Index', unit: '', column: 'uva', color: '#b8870a', clampMin: 0 },
 };
 
 const taskMessages: Record<string, string> = {
-  apogee: 'Task: Show the exact apogee time and explain why pressure is lowest there.',
-  descent: 'Task: Compute vertical speed between readings and chart descent rate.',
-  ozone: 'Task: Align ozone sensor milliseconds with flight time and compare by altitude.',
-  geiger: 'Task: Convert Geiger clicks into a rate and test whether it rises with altitude.',
+  apogee: 'Auftrag: Zeige den genauen Zeitpunkt des Apogäums und erkläre, warum der Luftdruck dort am niedrigsten ist.',
+  descent: 'Auftrag: Berechne die vertikale Geschwindigkeit zwischen den Messpunkten und zeichne die Sinkrate.',
+  ozone: 'Auftrag: Ordne die Ozon-Millisekunden der Flugzeit zu und vergleiche die Werte nach Höhe.',
+  geiger: 'Auftrag: Wandle Geiger-Klicks in eine Rate um und prüfe, ob sie mit der Höhe steigt.',
 };
 
 const appState: {
@@ -92,7 +92,7 @@ const selectedPoint = document.querySelector('#selected-point');
 
 init().catch((error: unknown) => {
   console.error(error);
-  setStatus(`Could not load data: ${error instanceof Error ? error.message : String(error)}`);
+  setStatus(`Daten konnten nicht geladen werden: ${error instanceof Error ? error.message : String(error)}`);
 });
 
 async function init(): Promise<void> {
@@ -107,7 +107,7 @@ async function init(): Promise<void> {
   appState.geiger = parseSimpleSensorFile(geigerText, 'clicks');
 
   if (appState.flight.length === 0) {
-    throw new Error('No usable flight rows found');
+    throw new Error('Keine nutzbaren Flugmesswerte gefunden');
   }
 
   renderMetrics();
@@ -115,13 +115,13 @@ async function init(): Promise<void> {
   renderAll();
   wireControls();
 
-  setStatus(`${appState.flight.length.toLocaleString()} valid flight records loaded`);
+  setStatus(`${formatInteger(appState.flight.length)} gültige Flugmesswerte geladen`);
 }
 
 async function fetchText(path: string): Promise<string> {
   const response = await fetch(path);
   if (!response.ok) {
-    throw new Error(`${path} returned ${response.status}`);
+    throw new Error(`${path} meldet Status ${response.status}`);
   }
   return response.text();
 }
@@ -134,7 +134,7 @@ function parseFlightCsv(text: string): FlightRow[] {
 
   const headerIndex = lines.findIndex((line) => line.startsWith('Uptime [s];'));
   if (headerIndex === -1) {
-    throw new Error('Could not find the telemetry header row');
+    throw new Error('Kopfzeile der Telemetrie wurde nicht gefunden');
   }
 
   const headers = lines[headerIndex].split(';');
@@ -206,7 +206,7 @@ function wireControls(): void {
   document.querySelectorAll('.task-button').forEach((button) => {
     button.addEventListener('click', () => {
       if (!(button instanceof HTMLButtonElement)) return;
-      setSelected(taskMessages[button.dataset.task ?? ''] ?? 'Choose a task and make a small pull request.');
+      setSelected(taskMessages[button.dataset.task ?? ''] ?? 'Wähle einen Auftrag und erstelle einen kleinen Änderungsvorschlag.');
     });
   });
 
@@ -233,12 +233,12 @@ function renderMetrics(): void {
   const geigerTotal = appState.geiger.reduce((sum, row) => sum + row.value, 0);
 
   const metrics: Array<[string, string, string]> = [
-    ['Max altitude', formatNumber(summary.maxAltitude.altitude, 0, 'm'), formatTime(summary.maxAltitude.time)],
-    ['Flight duration', formatDuration(summary.durationSeconds), `${formatTime(summary.start.time)} to ${formatTime(summary.end.time)}`],
-    ['Lowest temperature', formatNumber(summary.minTemperature.temperature, 1, 'C'), formatTime(summary.minTemperature.time)],
-    ['Distance', formatNumber(summary.distanceKm, 1, 'km'), 'Projected from GNSS points'],
-    ['Peak ozone', ozoneMax ? formatNumber(ozoneMax.value, 0, 'ppb') : 'n/a', `${appState.ozone.length.toLocaleString()} ozone readings`],
-    ['Geiger clicks', geigerTotal.toLocaleString(), `${appState.geiger.length.toLocaleString()} radiation readings`],
+    ['Maximale Höhe', formatNumber(summary.maxAltitude.altitude, 0, 'm'), formatTime(summary.maxAltitude.time)],
+    ['Flugdauer', formatDuration(summary.durationSeconds), `${formatTime(summary.start.time)} bis ${formatTime(summary.end.time)}`],
+    ['Niedrigste Temperatur', formatNumber(summary.minTemperature.temperature, 1, '°C'), formatTime(summary.minTemperature.time)],
+    ['Strecke', formatNumber(summary.distanceKm, 1, 'km'), 'Aus GNSS-Punkten berechnet'],
+    ['Ozon-Spitze', ozoneMax ? formatNumber(ozoneMax.value, 0, 'ppb') : 'k. A.', `${formatInteger(appState.ozone.length)} Ozonmesswerte`],
+    ['Geiger-Klicks', formatInteger(geigerTotal), `${formatInteger(appState.geiger.length)} Strahlungsmesswerte`],
   ];
 
   metrics.forEach(([label, value, detail]) => {
@@ -255,7 +255,7 @@ function renderMetrics(): void {
 function summarizeFlight(rows: FlightRow[]) {
   const start = rows[0];
   const end = rows[rows.length - 1];
-  if (!start || !end) throw new Error('No flight rows to summarize');
+  if (!start || !end) throw new Error('Keine Flugmesswerte für die Zusammenfassung');
 
   return {
     start,
@@ -281,8 +281,8 @@ function renderMainChart(): void {
   const xRange: [number, number] = [first.uptime, last.uptime];
   const yRange = extent(values, { clampMin: config.clampMin });
 
-  if (chartTitle) chartTitle.textContent = `${config.label} over flight time`;
-  if (chartNote) chartNote.textContent = `${rows.length.toLocaleString()} sampled points from the cleaned telemetry CSV.`;
+  if (chartTitle) chartTitle.textContent = `${config.label} über Flugzeit`;
+  if (chartNote) chartNote.textContent = `${formatInteger(rows.length)} dargestellte Punkte aus der bereinigten Telemetrie-CSV.`;
 
   const width = svg.clientWidth || 820;
   const height = svg.clientHeight || 390;
@@ -323,12 +323,12 @@ function renderMainChart(): void {
       fill: config.color,
     });
     circle.addEventListener('mouseenter', () => {
-      setSelected(`${formatTime(point.row.time)} | ${config.label}: ${formatNumber(point.row[config.column], 1, config.unit)} | Altitude: ${formatNumber(point.row.altitude, 0, 'm')}`);
+      setSelected(`${formatTime(point.row.time)} | ${config.label}: ${formatNumber(point.row[config.column], 1, config.unit)} | Höhe: ${formatNumber(point.row.altitude, 0, 'm')}`);
     });
     group.append(circle);
   });
 
-  drawAxisLabel(svg, pad.left + plotWidth / 2, height - 8, 'Flight time');
+  drawAxisLabel(svg, pad.left + plotWidth / 2, height - 8, 'Flugzeit');
 }
 
 function renderMap(): void {
@@ -381,8 +381,8 @@ function renderMap(): void {
 
   const start = points[0];
   const finish = points[points.length - 1];
-  if (start) drawMapMarker(svg, start.x, start.y, 'Launch');
-  if (finish) drawMapMarker(svg, finish.x, finish.y, 'Landing');
+  if (start) drawMapMarker(svg, start.x, start.y, 'Start');
+  if (finish) drawMapMarker(svg, finish.x, finish.y, 'Landung');
 }
 
 function drawGrid(group: SVGElement, width: number, height: number, yRange: [number, number], unit: string): void {
@@ -423,7 +423,7 @@ function renderTable(): void {
       row.lat.toFixed(5),
       row.lon.toFixed(5),
       formatNumber(row.altitude, 1, 'm'),
-      formatNumber(row.temperature, 1, 'C'),
+      formatNumber(row.temperature, 1, '°C'),
       formatNumber(row.pressure, 1, 'hPa'),
     ].forEach((value) => {
       const td = document.createElement('td');
@@ -493,8 +493,8 @@ function toRadians(value: number): number {
 }
 
 function formatNumber(value: number, digits = 0, unit = ''): string {
-  if (!Number.isFinite(value)) return 'n/a';
-  const formatted = new Intl.NumberFormat('en', {
+  if (!Number.isFinite(value)) return 'k. A.';
+  const formatted = new Intl.NumberFormat('de-DE', {
     maximumFractionDigits: digits,
     minimumFractionDigits: digits,
   }).format(value);
@@ -504,17 +504,23 @@ function formatNumber(value: number, digits = 0, unit = ''): string {
 function formatDuration(seconds: number): string {
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
-  return `${hours} h ${minutes} min`;
+  return `${hours} Std. ${minutes} Min.`;
 }
 
 function formatTime(date: Date): string {
-  return new Intl.DateTimeFormat('en', {
+  return new Intl.DateTimeFormat('de-DE', {
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit',
     timeZone: 'UTC',
     hour12: false,
   }).format(date);
+}
+
+function formatInteger(value: number): string {
+  return new Intl.NumberFormat('de-DE', {
+    maximumFractionDigits: 0,
+  }).format(value);
 }
 
 function setStatus(message: string): void {
