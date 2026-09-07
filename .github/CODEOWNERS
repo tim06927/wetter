@@ -5,3 +5,9 @@
 # /deploy/ @your-github-name @teacher-github-name
 # /package.json @your-github-name @teacher-github-name
 # /package-lock.json @your-github-name @teacher-github-name
+
+* @tim06927
+# /.github/ @tim06927
+# /deploy/ @tim06927
+# /package.json @tim06927
+# /package-lock.json @tim06927
