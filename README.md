@@ -12,6 +12,14 @@ Die App laedt diese oeffentlichen Datendateien:
 
 Alle im Frontend sichtbaren Texte sollen auf Deutsch sein.
 
+## Projektstatus
+
+- GitHub: <https://github.com/tim06927/wetter>
+- Standardbranch: `main`
+- CODEOWNERS ist fuer `@tim06927` eingerichtet.
+- Produktion: statische Caddy-Auslieferung aus `/srv/wetter/current`.
+- Oeffentliche Domain: `wetter.timklausmann.de`
+
 ## Lokal Entwickeln
 
 Voraussetzung: Node.js 24 oder neuer.
@@ -80,12 +88,42 @@ sudo caddy validate --config /etc/caddy/Caddyfile
 sudo systemctl reload caddy
 ```
 
+## DNS-Hinweis Fuer FlexDNS
+
+`wetter.timklausmann.de` muss auf eine Adresse zeigen, ueber die dieser
+Homeserver von aussen auf Port `80` und `443` erreichbar ist. Die App selbst
+braucht keinen offenen Entwicklungsport und keinen `reverse_proxy`.
+
+Pruefen:
+
+```bash
+resolvectl query -t A wetter.timklausmann.de
+resolvectl query -t AAAA wetter.timklausmann.de
+ip -brief addr
+curl -I https://wetter.timklausmann.de
+journalctl -u caddy -n 80 --no-pager
+```
+
+Wenn FlexDNS nur einen `AAAA`-Record veroeffentlicht, muss genau diese IPv6 am
+Homeserver oder am Router ankommen. Wenn die veroeffentlichte IPv6 nicht zu den
+Adressen aus `ip -brief addr` passt, ist der DNS-Eintrag stale oder der
+FlexDNS-Updater nutzt die falsche Adresse. Dann entweder den `AAAA`-Record
+korrigieren, IPv6-Forwarding/Firewall reparieren oder zusaetzlich einen
+erreichbaren `A`-Record fuer die oeffentliche IPv4 setzen.
+
 ## Maintainer-Aufgaben
 
-- GitHub-Repository anlegen und Sichtbarkeit festlegen.
-- Echte GitHub-Nutzernamen in `.github/CODEOWNERS` eintragen.
+Erledigt:
+
+- GitHub-Repository angelegt: <https://github.com/tim06927/wetter>
+- CODEOWNERS fuer `@tim06927` eingerichtet.
+- Caddy-Site-Block fuer `wetter.timklausmann.de` eingetragen.
+- Deployment-Pfad `/srv/wetter/current` eingerichtet.
+
+Noch offen:
+
 - Branch Protection fuer `main` aktivieren.
-- Domain/Subdomain im DNS auf den Homeserver zeigen lassen.
-- Caddy-Site-Block fuer die gewaehlte Domain eintragen.
+- Lehrkraft und Schuelerinnen/Schueler einladen oder Fork/PR-Workflow klaeren.
+- DNS/HTTPS fuer `wetter.timklausmann.de` von aussen testen.
 - Optional spaeter Deployment automatisieren, aber ohne Server-Zugriff fuer
   Schuelerinnen und Schueler.
