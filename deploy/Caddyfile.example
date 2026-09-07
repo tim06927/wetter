@@ -1,13 +1,15 @@
-balloon.example.com {
-    root * /srv/wetter/current
-    encode zstd gzip
-    file_server
+# Wetterballon-Fluglabor static site.
+# Copy this block into /etc/caddy/Caddyfile and change the default host if needed.
+{$WETTER_PUBLIC_HOST:wetter.timklausmann.de} {
+	root * /srv/wetter/current
+	encode zstd gzip
+	file_server
 
-    header {
-        Strict-Transport-Security "max-age=31536000"
-        X-Content-Type-Options "nosniff"
-        X-Frame-Options "DENY"
-        Referrer-Policy "strict-origin-when-cross-origin"
-        Permissions-Policy "geolocation=(), microphone=(), camera=()"
-    }
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "geolocation=(), microphone=(), camera=()"
+	}
 }

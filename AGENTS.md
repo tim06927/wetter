@@ -7,7 +7,8 @@ This project is for students learning real coding with AI assistance.
 - Treat files in `public/data/` as public once the site is published.
 - Keep changes small enough to review in a pull request.
 - Run `npm run check` and `npm run build` before requesting review.
-- Prefer readable JavaScript modules over clever abstractions.
+- Prefer readable TypeScript modules over clever abstractions.
+- Keep all user-facing frontend text in German.
 - Add comments only when they explain science, units, or non-obvious math.
 
 Good first tasks:

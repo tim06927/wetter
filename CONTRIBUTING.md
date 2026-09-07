@@ -1,24 +1,29 @@
-# Contributing
+# Mitmachen
 
-## Student Workflow
+## Arbeitsablauf Fuer Schuelerinnen Und Schueler
 
-1. Open the repository in GitHub Codespaces.
-2. Run `npm run dev`.
-3. Open the forwarded `5173` preview.
-4. Create a branch for one small task.
-5. Ask AI for help, but read the code it writes.
-6. Run `npm run check` and `npm run build`.
-7. Open a pull request.
+1. Repository in GitHub Codespaces oeffnen.
+2. Im Terminal `npm run dev` starten.
+3. Die weitergeleitete Vorschau fuer Port `5173` oeffnen.
+4. Fuer eine kleine Aufgabe einen eigenen Branch erstellen.
+5. KI als Hilfe nutzen, aber den erzeugten Code selbst lesen und verstehen.
+6. Vor dem Pull Request `npm run check` und `npm run build` ausfuehren.
+7. Pull Request oeffnen und kurz beschreiben, was geaendert wurde.
 
-## Review Rules
+## Review-Regeln
 
-- Pull requests should focus on one idea.
-- Do not merge if the build fails.
-- Do not change `.github/`, `deploy/`, or dependency files without maintainer review.
-- Never paste secrets into source files or workflow logs.
+- Pull Requests sollen jeweils nur eine Idee oder Aufgabe enthalten.
+- Nicht mergen, wenn `npm run check` oder `npm run build` fehlschlaegt.
+- `.github/`, `deploy/`, `package.json` und `package-lock.json` nur mit
+  Maintainer-Review aendern.
+- Keine API-Keys, Passwoerter, Tokens, Cookies oder privaten Schluessel in Code,
+  Kommentare, Screenshots oder Workflow-Logs einfuegen.
+- Alle im Frontend sichtbaren Texte muessen Deutsch sein.
 
-## Data Notes
+## Datenhinweise
 
-The logger CSV in `public/data/` contains metadata before the real table. The
-app looks for the header row beginning with `Uptime [s];` and parses
-semicolon-separated telemetry from there.
+Die Logger-CSV in `public/data/` enthaelt Metadaten vor der eigentlichen
+Tabelle. Die App sucht die Kopfzeile, die mit `Uptime [s];` beginnt, und liest
+danach die semikolongetrennte Telemetrie.
+
+Dateien in `public/data/` gelten nach dem Veroeffentlichen als oeffentlich.

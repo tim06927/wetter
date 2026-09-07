@@ -1,10 +1,10 @@
 {
-  "name": "Weather Balloon Flight Lab",
+  "name": "Wetterballon-Fluglabor",
   "image": "mcr.microsoft.com/devcontainers/javascript-node:24-bookworm",
   "forwardPorts": [5173],
   "portsAttributes": {
     "5173": {
-      "label": "Vite preview",
+      "label": "Vite-Vorschau",
       "onAutoForward": "notify"
     }
   },

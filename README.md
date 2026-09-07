@@ -1,74 +1,91 @@
-# Weather Balloon Flight Lab
+# Wetterballon-Fluglabor
 
-A static web app for exploring weather balloon telemetry from a student launch.
+Statische Web-App zur Erkundung der Wetterballon-Telemetrie eines
+Schuelerstarts. Die erste Version laeuft komplett im Browser, nutzt Vite mit
+TypeScript und braucht in Produktion keinen eigenen Node-Server.
 
-The first version runs directly in the browser and loads:
+Die App laedt diese oeffentlichen Datendateien:
 
 - `public/data/data_some_cleaning.csv`
 - `public/data/ozon.txt`
 - `public/data/geiger.txt`
 
-## Local Development
+Alle im Frontend sichtbaren Texte sollen auf Deutsch sein.
+
+## Lokal Entwickeln
+
+Voraussetzung: Node.js 24 oder neuer.
 
 ```bash
 npm install
 npm run dev
 ```
 
-Then open:
+Dann die Vite-Vorschau oeffnen:
 
 ```text
 http://localhost:5173
 ```
 
-## Student Development
+## Entwicklung Mit GitHub Codespaces
 
-Students can work in GitHub Codespaces:
+Schuelerinnen und Schueler koennen ohne Zugriff auf den Homeserver in GitHub
+Codespaces arbeiten:
 
 ```bash
 npm run dev
 ```
 
-The app uses plain JavaScript modules with TypeScript checking through JSDoc.
-This keeps the code readable while still catching basic mistakes.
+Der Codespace startet mit Node 24 und installiert die Abhaengigkeiten nach dem
+Anlegen automatisch. Aenderungen sollen ueber kleine Pull Requests in `main`
+kommen.
 
-## Production Shape
+## Pruefen
 
-Production should serve static files only through Caddy. No student-written
-server process needs to run on the home server.
+Vor einem Pull Request:
 
-Build the static site:
+```bash
+npm run check
+npm run build
+```
+
+`npm run check` prueft TypeScript. `npm run build` erzeugt die statische
+Produktionsversion in `dist/`.
+
+## Hosting Auf Dem Homeserver
+
+Die Produktionsseite sollte statisch von Caddy aus `/srv/wetter/current`
+ausgeliefert werden. Das ist absichtlich kein `reverse_proxy` auf einen
+studentisch veraenderbaren Entwicklungsserver.
+
+Build erstellen:
 
 ```bash
 npm run build
 ```
 
-Install the latest build locally:
+Build nach `/srv/wetter/releases/...` installieren und den Symlink
+`/srv/wetter/current` aktualisieren:
 
 ```bash
 sudo ./scripts/install_static_site.sh
 ```
 
-```caddyfile
-balloon.example.com {
-    root * /srv/wetter/current
-    encode zstd gzip
-    file_server
+Danach den Site-Block aus [deploy/Caddyfile.example](./deploy/Caddyfile.example)
+in `/etc/caddy/Caddyfile` einfuegen, Domain anpassen, Caddy validieren und neu
+laden:
 
-    header {
-        Strict-Transport-Security "max-age=31536000"
-        X-Content-Type-Options "nosniff"
-        X-Frame-Options "DENY"
-        Referrer-Policy "strict-origin-when-cross-origin"
-        Permissions-Policy "geolocation=(), microphone=(), camera=()"
-    }
-}
+```bash
+sudo caddy validate --config /etc/caddy/Caddyfile
+sudo systemctl reload caddy
 ```
 
-## What Maintainers Need To Configure
+## Maintainer-Aufgaben
 
-- GitHub repository name and visibility.
-- Real usernames in `.github/CODEOWNERS`.
-- Branch protection for `main`.
-- Public domain or subdomain for Caddy.
-- A deployment path, recommended: `/srv/wetter/current`.
+- GitHub-Repository anlegen und Sichtbarkeit festlegen.
+- Echte GitHub-Nutzernamen in `.github/CODEOWNERS` eintragen.
+- Branch Protection fuer `main` aktivieren.
+- Domain/Subdomain im DNS auf den Homeserver zeigen lassen.
+- Caddy-Site-Block fuer die gewaehlte Domain eintragen.
+- Optional spaeter Deployment automatisieren, aber ohne Server-Zugriff fuer
+  Schuelerinnen und Schueler.
