@@ -111,6 +111,35 @@ FlexDNS-Updater nutzt die falsche Adresse. Dann entweder den `AAAA`-Record
 korrigieren, IPv6-Forwarding/Firewall reparieren oder zusaetzlich einen
 erreichbaren `A`-Record fuer die oeffentliche IPv4 setzen.
 
+### Vorhandenen FlexDNS-Updater Reparieren
+
+Auf diesem Homeserver gibt es bereits systemd-Updater fuer do.de FlexDNS. Wenn
+diese nach einem Neustart mit `No global /128 IPv6 found on enp3s0` scheitern,
+ist die alte IPv6-Erkennung zu eng. Der neue Updater in
+`deploy/flexdns/update-flexdns-do` ermittelt die aktuelle, von aussen sichtbare
+IPv6 zuerst ueber externe Echo-Dienste und faellt erst danach auf die lokale
+Routing-Quelle zurueck.
+
+Installieren:
+
+```bash
+sudo ./scripts/install_flexdns_external_ipv6.sh
+sudo systemctl start flexdns-cv.service
+journalctl -u flexdns-cv.service -n 30 --no-pager
+dig @ns1.domainoffensive.de wetter.timklausmann.de AAAA +short
+```
+
+Ein bewusstes Update trotz unveraenderter lokal gemerkter IPv6 ist moeglich mit:
+
+```bash
+sudo FLEXDNS_FORCE_UPDATE=1 /usr/local/sbin/update-flexdns-cv
+```
+
+Der Installer ersetzt nur die vorhandenen lokalen Update-Skripte unter
+`/usr/local/sbin/`, legt Backups mit Zeitstempel an und reduziert die Timer auf
+kurze Intervalle. Zugangsdaten bleiben weiter in den geschuetzten Dateien unter
+`/etc`.
+
 ## Maintainer-Aufgaben
 
 Erledigt:

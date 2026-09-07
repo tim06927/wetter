@@ -1,0 +1,77 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ENV_FILE="${FLEXDNS_ENV_FILE:-/etc/flexdns-cv.env}"
+STATE_DIR="${FLEXDNS_STATE_DIR:-/var/lib/flexdns-cv}"
+STATE_FILE="${STATE_DIR}/last_ipv6"
+UPDATE_URL="${FLEXDNS_UPDATE_URL:-https://ddns.do.de/}"
+PRIMARY_CHECK_URL="${FLEXDNS_PRIMARY_CHECK_URL:-https://api64.ipify.org}"
+SECONDARY_CHECK_URL="${FLEXDNS_SECONDARY_CHECK_URL:-https://ifconfig.co/ip}"
+ROUTE_PROBE="${FLEXDNS_ROUTE_PROBE:-2606:4700:4700::1111}"
+
+if [[ ! -r "${ENV_FILE}" ]]; then
+  echo "FlexDNS env file not readable: ${ENV_FILE}" >&2
+  exit 1
+fi
+
+source "${ENV_FILE}"
+
+: "${FLEXDNS_USERNAME:?FLEXDNS_USERNAME is missing}"
+: "${FLEXDNS_PASSWORD:?FLEXDNS_PASSWORD is missing}"
+: "${FLEXDNS_HOSTNAME:?FLEXDNS_HOSTNAME is missing}"
+
+is_public_ipv6() {
+  local value="${1:-}"
+
+  [[ "${value}" == *:* ]] || return 1
+  [[ "${value}" =~ ^[0-9A-Fa-f:.]+$ ]] || return 1
+
+  case "${value}" in
+    ::1|fe80:*|FE80:*|fc*|FC*|fd*|FD*) return 1 ;;
+  esac
+}
+
+external_ipv6_from_url() {
+  local url="$1"
+  local value
+
+  value="$(curl -6 --fail --silent --show-error --max-time 10 "${url}" | tr -d '[:space:]')" || return 1
+  is_public_ipv6 "${value}" || return 1
+  printf '%s\n' "${value}"
+}
+
+route_source_ipv6() {
+  local value
+
+  value="$(ip -6 route get "${ROUTE_PROBE}" 2>/dev/null | awk '{for (i=1;i<=NF;i++) if ($i=="src") {print $(i+1); exit}}')" || return 1
+  is_public_ipv6 "${value}" || return 1
+  printf '%s\n' "${value}"
+}
+
+detect_public_ipv6() {
+  external_ipv6_from_url "${PRIMARY_CHECK_URL}" && return 0
+  external_ipv6_from_url "${SECONDARY_CHECK_URL}" && return 0
+  route_source_ipv6 && return 0
+
+  echo "No public IPv6 detected via external checks or route fallback" >&2
+  return 1
+}
+
+IP6="$(detect_public_ipv6)"
+
+install -d -m 0755 "${STATE_DIR}"
+
+if [[ "${FLEXDNS_FORCE_UPDATE:-0}" != "1" ]] && [[ -f "${STATE_FILE}" ]] && [[ "$(cat "${STATE_FILE}")" == "${IP6}" ]]; then
+  echo "IPv6 unchanged: ${IP6}"
+  exit 0
+fi
+
+curl --fail --silent --show-error \
+  --user "${FLEXDNS_USERNAME}:${FLEXDNS_PASSWORD}" \
+  --get \
+  --data-urlencode "hostname=${FLEXDNS_HOSTNAME}" \
+  --data-urlencode "myip=${IP6}" \
+  "${UPDATE_URL}"
+echo
+
+printf '%s\n' "${IP6}" > "${STATE_FILE}"
